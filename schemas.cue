@@ -11,10 +11,14 @@ package renovate
 	matchManagers?: [...#Manager]
 	matchUpdateTypes?: [...#UpdateType]
 	enabled?:           bool
-	automerge?:         bool
+	automerge:          bool | *false
 	automergeType?:     string
 	automergeStrategy?: string
 	recreateWhen?:      string
+
+	if automerge {
+		automergeStrategy: "merge-commit"
+	}
 }
 
 #RenovateConfig: {
@@ -28,33 +32,7 @@ package renovate
 	platformAutomerge: true
 }
 
-let basePackageRule = {
-	matchDepTypes: ["indirect"]
-	enabled: true
-	matchManagers: ["gomod"]
-}
-
-let automergeBase = {
-	automerge: true
-}
-
-let noTestCasesBase = {
-	ignoreTests:       true
-	automergeType:     "branch"
-	automergeStrategy: "merge-commit"
-}
-
-let updateTypes = {
-	standard: ["minor", "patch", "pin", "digest"]
-	withReplacement: ["minor", "patch", "pin", "digest", "replacement"]
-}
-
-let goPostUpdateOptions = [
-	"gomodTidyE",
-	"gomodMassage",
-	"gomodUpdateImportPaths",
-]
-
+// Base configurations
 let bestPracticesBase = {
 	extends: [
 		"config:best-practices",
@@ -69,55 +47,93 @@ let recommendedBase = {
 	]
 }
 
+// Package rules building blocks
+let packageRuleBlocks = {
+	base: {
+		matchDepTypes: ["indirect"]
+		enabled: true
+		matchManagers: ["gomod"]
+	}
+	automerge: {
+		automerge: true
+	}
+	noTests: {
+		ignoreTests:       true
+		automergeType:     "branch"
+		automergeStrategy: "merge-commit"
+	}
+	allDeps: {
+		matchDepTypes: ["*"]
+	}
+	recreate: {
+		recreateWhen: "always"
+	}
+}
+
+updateTypes: {
+	standard: ["minor", "patch", "pin", "digest"]
+	withReplacement: standard + ["replacement"]
+}
+
+let goPostUpdateOptions = [
+	"gomodTidyE",
+	"gomodMassage",
+	"gomodUpdateImportPaths",
+]
+
+// Common configuration patterns
+let commonPatterns = {
+	withGoPost: {
+		postUpdateOptions: goPostUpdateOptions
+	}
+}
+
 cat: #RenovateConfig & bestPracticesBase & {
 	packageRules: [
-		automergeBase & noTestCasesBase & {
-			rangeStrategy: "pin"
-			matchDepTypes: ["*"]
+		packageRuleBlocks.automerge &
+		packageRuleBlocks.noTests &
+		packageRuleBlocks.allDeps & {
+			rangeStrategy:    "pin"
 			matchUpdateTypes: updateTypes.standard
 		},
 	]
 }
 
-dog: #RenovateConfig & bestPracticesBase & {
+dog: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		automergeBase & {
+		packageRuleBlocks.automerge &
+		packageRuleBlocks.recreate & {
 			matchUpdateTypes: updateTypes.standard
-			recreateWhen:     "always"
 		},
 	]
-	postUpdateOptions: goPostUpdateOptions
 }
 
-owl: #RenovateConfig & bestPracticesBase & {
+owl: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		automergeBase & {
+		packageRuleBlocks.automerge &
+		packageRuleBlocks.recreate & {
 			matchUpdateTypes: updateTypes.withReplacement
-			recreateWhen:     "always"
 		},
 	]
-	postUpdateOptions: goPostUpdateOptions
 	ignorePaths: ["**/testdata/go.mod"]
 }
 
-monkey: #RenovateConfig & bestPracticesBase & {
+monkey: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		basePackageRule,
-		automergeBase & noTestCasesBase & {
-			matchDepTypes: ["*"]
+		packageRuleBlocks.base,
+		packageRuleBlocks.automerge &
+		packageRuleBlocks.noTests &
+		packageRuleBlocks.allDeps & {
 			matchUpdateTypes: updateTypes.withReplacement
 		},
 	]
-	postUpdateOptions: goPostUpdateOptions
 }
 
-hamster: #RenovateConfig & recommendedBase & {
+hamster: #RenovateConfig & recommendedBase & commonPatterns.withGoPost & {
 	packageRules: [
-		automergeBase & {
-			matchDepTypes: ["*"]
-			matchUpdateTypes:  updateTypes.standard
-			automergeStrategy: "squash"
+		packageRuleBlocks.automerge &
+		packageRuleBlocks.allDeps & {
+			matchUpdateTypes: updateTypes.standard
 		},
 	]
-	postUpdateOptions: goPostUpdateOptions
 }
