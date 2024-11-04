@@ -17,13 +17,13 @@ jobs:
         - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5
       with:
         go-version: '>=1.21.1'
         check-latest: true
-    - uses: cue-lang/setup-cue@v1.0.0
+    - uses: cue-lang/setup-cue@1713281ae501e533ff06108005dffeab9e2e5203 # v1.0.0
     - name: Verify CUE schemas
       run: cue vet schemas.cue
     - name: Export CUE schemas
