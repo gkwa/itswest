@@ -23,7 +23,7 @@ jobs:
       with:
         go-version: '>=1.21.1'
         check-latest: true
-    - uses: cue-lang/setup-cue@1713281ae501e533ff06108005dffeab9e2e5203 # v1.0.0
+    - uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
     - name: Verify CUE schemas
       run: cue vet schemas.cue
     - name: Export CUE schemas
