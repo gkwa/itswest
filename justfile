@@ -7,7 +7,7 @@ fmt:
     cue fmt .
     cue fmt --files *
     just --unstable --fmt
-    prettier --config=.prettierrc.json --write .
+    prettier --config=.prettierrc.json --write *.json
 
 vet:
     cue vet schemas.cue
