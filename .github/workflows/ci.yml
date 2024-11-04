@@ -1,0 +1,32 @@
+name: CI
+"on":
+  push:
+    branches:
+    - '*'
+  pull_request:
+    branches:
+    - '*'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '>=1.21.1'
+        check-latest: true
+    - name: Install CUE
+      run: |
+        go install cuelang.org/go/cmd/cue@${{ env.CUE_VERSION }}
+      env:
+        CUE_VERSION: v0.10.0
+    - name: Verify CUE schemas
+      run: cue vet schemas.cue
+    - name: Export CUE schemas
+      run: |
+        cue export --force schemas.cue -e hamster -o hamster.json --out json
+        cue export --force schemas.cue -e cat -o cat.json --out json
+        cue export --force schemas.cue -e dog -o dog.json --out json
+        cue export --force schemas.cue -e owl -o owl.json --out json
+        cue export --force schemas.cue -e monkey -o monkey.json --out json
