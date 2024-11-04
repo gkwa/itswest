@@ -11,14 +11,10 @@ package renovate
 	matchManagers?: [...#Manager]
 	matchUpdateTypes?: [...#UpdateType]
 	enabled?:           bool
-	automerge:          bool | *false
+	automerge?:         bool | *false
 	automergeType?:     string
 	automergeStrategy?: string
 	recreateWhen?:      string
-
-	if automerge {
-		automergeStrategy: "merge-commit"
-	}
 }
 
 #RenovateConfig: {
@@ -32,7 +28,6 @@ package renovate
 	platformAutomerge: true
 }
 
-// Base configurations
 let bestPracticesBase = {
 	extends: [
 		"config:best-practices",
@@ -47,25 +42,26 @@ let recommendedBase = {
 	]
 }
 
-// Package rules building blocks
-let packageRuleBlocks = {
-	base: {
+ruleBlocks: {
+	indirectDeps: #PackageRule & {
 		matchDepTypes: ["indirect"]
 		enabled: true
 		matchManagers: ["gomod"]
 	}
-	automerge: {
+	automerge: #PackageRule & {
 		automerge: true
 	}
-	noTests: {
-		ignoreTests:       true
-		automergeType:     "branch"
+	mergeCommit: #PackageRule & {
 		automergeStrategy: "merge-commit"
 	}
-	allDeps: {
+	noTests: #PackageRule & {
+		ignoreTests:   true
+		automergeType: "branch"
+	}
+	allDeps: #PackageRule & {
 		matchDepTypes: ["*"]
 	}
-	recreate: {
+	recreate: #PackageRule & {
 		recreateWhen: "always"
 	}
 }
@@ -81,7 +77,6 @@ let goPostUpdateOptions = [
 	"gomodUpdateImportPaths",
 ]
 
-// Common configuration patterns
 let commonPatterns = {
 	withGoPost: {
 		postUpdateOptions: goPostUpdateOptions
@@ -90,9 +85,10 @@ let commonPatterns = {
 
 cat: #RenovateConfig & bestPracticesBase & {
 	packageRules: [
-		packageRuleBlocks.automerge &
-		packageRuleBlocks.noTests &
-		packageRuleBlocks.allDeps & {
+		ruleBlocks.automerge &
+		ruleBlocks.mergeCommit &
+		ruleBlocks.noTests &
+		ruleBlocks.allDeps & {
 			rangeStrategy:    "pin"
 			matchUpdateTypes: updateTypes.standard
 		},
@@ -101,8 +97,9 @@ cat: #RenovateConfig & bestPracticesBase & {
 
 dog: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		packageRuleBlocks.automerge &
-		packageRuleBlocks.recreate & {
+		ruleBlocks.automerge &
+		ruleBlocks.mergeCommit &
+		ruleBlocks.recreate & {
 			matchUpdateTypes: updateTypes.standard
 		},
 	]
@@ -110,8 +107,9 @@ dog: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 
 owl: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		packageRuleBlocks.automerge &
-		packageRuleBlocks.recreate & {
+		ruleBlocks.automerge &
+		ruleBlocks.mergeCommit &
+		ruleBlocks.recreate & {
 			matchUpdateTypes: updateTypes.withReplacement
 		},
 	]
@@ -120,10 +118,11 @@ owl: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 
 monkey: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 	packageRules: [
-		packageRuleBlocks.base,
-		packageRuleBlocks.automerge &
-		packageRuleBlocks.noTests &
-		packageRuleBlocks.allDeps & {
+		ruleBlocks.indirectDeps,
+		ruleBlocks.automerge &
+		ruleBlocks.mergeCommit &
+		ruleBlocks.noTests &
+		ruleBlocks.allDeps & {
 			matchUpdateTypes: updateTypes.withReplacement
 		},
 	]
@@ -131,8 +130,9 @@ monkey: #RenovateConfig & bestPracticesBase & commonPatterns.withGoPost & {
 
 hamster: #RenovateConfig & recommendedBase & commonPatterns.withGoPost & {
 	packageRules: [
-		packageRuleBlocks.automerge &
-		packageRuleBlocks.allDeps & {
+		ruleBlocks.automerge &
+		ruleBlocks.mergeCommit &
+		ruleBlocks.allDeps & {
 			matchUpdateTypes: updateTypes.standard
 		},
 	]
